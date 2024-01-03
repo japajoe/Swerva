@@ -30,12 +30,6 @@ namespace Swerva
             this.routeMapper = routeMapper;
         }
 
-        private X509Certificate GetCertificate()
-        {
-            //dotnet dev-certs https -ep cert.pfx -p crypticpassword
-            return new X509Certificate2(HttpSettings.CertificatePath, HttpSettings.CertificatePassword);
-        }
-
         public async Task Run()
         {
             if(run)

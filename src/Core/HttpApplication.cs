@@ -39,7 +39,8 @@ namespace Swerva
 
             if(routeMapper.GetRoute(context.Request.URL, out HttpRoute route, false))
             {
-                await route.ProcessRequest(context);
+                var response = await route.GetResponse(context);
+                await response.Send(context);
             }
             else
             {
@@ -49,7 +50,7 @@ namespace Swerva
                 if(System.IO.File.Exists(filepath) && IsPathWithinDirectory(filepath, HttpSettings.PublicHtml))
                 {
                     HttpContentType contentType = HttpContentType.GetContentTypeFromFileExtension(filepath);
-                    var filestream = new System.IO.FileStream(filepath, FileMode.Open, FileAccess.Read);
+                    var filestream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
                     var response = new HttpResponse(HttpStatusCode.OK, contentType, filestream);
                     response.AddHeader("Cache-Control", "max-age=3600");
                     await response.Send(context);
@@ -58,7 +59,8 @@ namespace Swerva
                 {
                     if(routeMapper.GetRoute("/404", out route, true))
                     {
-                        await route.ProcessRequest(context);
+                        var response = await route.GetResponse(context);
+                        await response.Send(context);
                     }
                     else
                     {

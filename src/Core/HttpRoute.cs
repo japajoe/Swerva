@@ -16,7 +16,7 @@ namespace Swerva
             this.IsInternal = isInternal;
         }
 
-        public async Task ProcessRequest(HttpContext context)
+        public async Task<HttpResponse> GetResponse(HttpContext context)
         {
             HttpControllerBase controller = (HttpControllerBase)Activator.CreateInstance(ControllerType);
             HttpResponse response = null;
@@ -55,7 +55,7 @@ namespace Swerva
                     break;
             }
 
-            await response.Send(context);
+            return response;            
         }     
     }
 }

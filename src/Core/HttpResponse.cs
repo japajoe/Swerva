@@ -11,7 +11,6 @@ namespace Swerva
         public HttpStatusCode StatusCode { get; private set; }
         public HttpContentType ContentType { get; private set; }
         public Stream Content { get; private set; }
-        public HttpCacheControl CacheControl { get; set; }
         public Dictionary<string, string> Headers { get; set; }
 
         public HttpResponse(HttpStatusCode statusCode, HttpContentType contentType)
@@ -19,7 +18,6 @@ namespace Swerva
             this.StatusCode = statusCode;
             this.ContentType = contentType;
             this.Content = null;
-            this.CacheControl = null;
             this.Headers = new Dictionary<string, string>();
         }
 
@@ -28,7 +26,6 @@ namespace Swerva
             this.StatusCode = statusCode;
             this.ContentType = contentType;
             this.Content = content;
-            this.CacheControl = null;
             this.Headers = new Dictionary<string, string>();
         }
 
@@ -36,7 +33,6 @@ namespace Swerva
         {
             this.StatusCode = statusCode;
             this.ContentType = contentType;
-            this.CacheControl = null;
             this.Headers = new Dictionary<string, string>();
             this.Content = new MemoryStream();
             var writer = new StreamWriter(this.Content);
@@ -45,63 +41,70 @@ namespace Swerva
             this.Content.Position = 0;
         }
 
-        private int WriteHeader(byte[] buffer, int offset, int count)
+        private string GetHeader()
         {
-            long contentLength = Content == null ? 0 : Content.Length;
-            StringBuilder ss = new StringBuilder();
-            ss.Append("HTTP/1.1 " + (int)StatusCode + "\n");
-            ss.Append("Date: " + System.DateTime.UtcNow.ToString() + "\n");
-            ss.Append("Server: " + HttpSettings.Name + "\n");
+            HttpResponseBuilder builder = new HttpResponseBuilder();
+            builder.Start(StatusCode);
+            builder.AddHeader("Date", System.DateTime.UtcNow.ToString());
+            builder.AddHeader("Server", HttpSettings.Name);
 
             if(Headers != null)
             {
                 foreach(var item in Headers)
                 {
-                    ss.Append(item.Key + ": " + item.Value + "\n");
+                    builder.AddHeader(item.Key, item.Value);
                 }
             }
 
+            long contentLength = Content == null ? 0 : Content.Length;
+
             if(contentLength > 0)
             {
-                ss.Append("Content-Length: " + contentLength + "\n");
-                ss.Append("Content-Type: " + ContentType.ToString() + "\n");
+                builder.AddHeader("Content-Length", contentLength.ToString());
+                builder.AddHeader("Content-Type",ContentType.ToString());
             }
-            
-            if(CacheControl != null)
-            {
-                string cacheControl = "Cache-Control: " + CacheControl.Build();
-                ss.Append(cacheControl + "\n");
-            }
-            
-            ss.Append("Connection: " + "close" + "\n\n");
 
-            ReadOnlySpan<char> chars = ss.ToString().AsSpan();
-            Span<byte> bytes = buffer.AsSpan(offset, count);
+            builder.End();
 
-            return System.Text.Encoding.UTF8.GetBytes(chars, bytes);
+            return builder.ToString();
         }
 
-        private int WriteContent(byte[] buffer, int offset, int count)
+        public void AddHeader(string key, string value)
         {
-            if(Content == null)
-                return 0;
-            return Content.Read(buffer, offset, count);
+            Headers[key] = value;
         }
 
         public async Task Send(HttpContext context, byte[] buffer)
         {
             try
             {
-                int numBytes = WriteHeader(buffer, 0, buffer.Length);
-                await context.Stream.WriteAsync(buffer, 0, numBytes);
+                string header = GetHeader();
+
+                int bytesPerChar = 4; //Wild assumption that a char can take up to 4 bytes
+                int charsPerIteration = Math.Min(header.Length, buffer.Length / bytesPerChar);
+                int numChars = header.Length;
+                int charIndex = 0;                
+                long numBytes = 0;
+
+                while(charIndex < numChars)
+                {
+                    numBytes = Encoding.UTF8.GetBytes(header, charIndex, charsPerIteration, buffer, 0);
+                    if(numBytes > 0)
+                    {
+                        await context.Stream.WriteAsync(buffer, 0, (int)numBytes);
+                        charIndex += (int)numBytes++;
+                    }
+                }
+                
+                numBytes = (Content == null) ? 0 : Content.Length;
 
                 while(numBytes > 0)
                 {
-                    numBytes = WriteContent(buffer, 0, buffer.Length);
+                    numBytes = Content.Read(buffer, 0, buffer.Length);
                     
                     if(numBytes > 0)
                     {
-                        await context.Stream.WriteAsync(buffer, 0, numBytes);
+                        await context.Stream.WriteAsync(buffer, 0, (int)numBytes);
                     }
                 }
             }

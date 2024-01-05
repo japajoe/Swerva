@@ -11,11 +11,6 @@ namespace Swerva
 
         static async Task Main(string[] args)
         {
-            /*In order to support https, you need to have a certificate.
-            To generate a self signed certificate run following command:
-            dotnet dev-certs https -ep certicatename.pfx -p passwordhere
-            */
-
             Console.CancelKeyPress += OnCancelKeyPress;
 
             HttpConfig config = HttpConfig.LoadFromFile("settings.json");

@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Swerva
 {
-    public class HttpServer
+    public sealed class HttpServer
     {
         private volatile bool run;
         private TcpListener httpListener = null;
@@ -39,25 +39,17 @@ namespace Swerva
 
             if(HttpSettings.UseHttps)
             {
-                HttpLog.WriteLine("Server started");
-                HttpLog.WriteLine("HTTP port:  " + HttpSettings.Port);
-                HttpLog.WriteLine("HTTPS port: " + HttpSettings.SslPort);
-                HttpLog.WriteLine("Maximum header size: " + HttpSettings.MaxHeaderSize);
-
+                HttpLog.WriteLine("Server started listening on http://localhost:" + HttpSettings.Port + " and https://localhost:" + HttpSettings.SslPort);
                 Task handleHttp = HandleHttp();
                 Task handleHttps = HandleHttps();
                 await Task.WhenAll(handleHttp, handleHttps);
             }
             else
             {
-                HttpLog.WriteLine("Server started");
-                HttpLog.WriteLine("HTTP port:  " + HttpSettings.Port);
-                HttpLog.WriteLine("Maximum header size: " + HttpSettings.MaxHeaderSize);
-
+                HttpLog.WriteLine("Server started listening on http://localhost:" + HttpSettings.Port);
                 Task handleHttp = HandleHttp();
                 await Task.WhenAll(handleHttp);
             }
-            
         }
 
         private async Task HandleHttp()
@@ -209,11 +201,8 @@ namespace Swerva
                     string filepath = HttpSettings.PublicHtml + context.Request.URL;
 
                     //To do: fix the path to prevent looking for files outside of allowed directory
-                    if(System.IO.File.Exists(filepath))
+                    if(System.IO.File.Exists(filepath) && IsPathWithinDirectory(filepath, HttpSettings.PublicHtml))
                     {
-                        HttpCacheControl cacheControl = new HttpCacheControl()
-                            .SetMaxAge(3600);
-
                         MediaType mediaType = MediaType.ApplicationOctetStream;
 
                         if(MimeTypeMap.TryGetMimeType(filepath, out string mimeType))
@@ -223,7 +212,7 @@ namespace Swerva
 
                         var filestream = new System.IO.FileStream(filepath, FileMode.Open, FileAccess.Read);
                         var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(mediaType), filestream);
-                        response.CacheControl = cacheControl;
+                        response.AddHeader("Cache-Control", "max-age=3600");
                         await response.Send(context, buffer);
                     }
                     else
@@ -235,6 +224,7 @@ namespace Swerva
                         else
                         {
                             var response = new HttpResponse(HttpStatusCode.NotFound, new HttpContentType(MediaType.TextHtml), "The requested document was not found");
+                            response.AddHeader("Cache-Control", "max-age=3600");
                             await response.Send(context, buffer);
                         }
                     }
@@ -244,6 +234,7 @@ namespace Swerva
             {
                 HttpContext context = new HttpContext(stream, null);
                 var response = new HttpResponse(HttpStatusCode.BadRequest, new HttpContentType(MediaType.TextHtml), "Bad request");
+                response.AddHeader("Cache-Control", "max-age=3600");
                 await response.Send(context, buffer);
             }
         }
@@ -253,6 +244,13 @@ namespace Swerva
             HttpContext context = new HttpContext(stream, null);
             var response = new HttpResponse(HttpStatusCode.RequestHeaderFieldsTooLarge, new HttpContentType(MediaType.TextHtml), "The request header is too large");
             await response.Send(context, buffer);
+        }
+
+        private bool IsPathWithinDirectory(string path, string directory)
+        {
+            string fullPath = Path.GetFullPath(path);
+            string fullDirectoryPath = Path.GetFullPath(directory);
+            return fullPath.StartsWith(fullDirectoryPath, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

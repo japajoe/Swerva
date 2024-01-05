@@ -4,26 +4,29 @@ namespace Swerva.Controllers
 {
     public sealed class NotFoundController : HttpControllerBase
     {
+        private static HttpPageContent content;
         private string template;
-        private HttpCacheControl cacheControl;
 
         public NotFoundController()
         {
-            cacheControl = new HttpCacheControl()
-                .SetMaxAge(60);
-
-            template = System.IO.File.ReadAllText(HttpSettings.PrivateHtml + "/template.html");
-            template = template.Replace("$(title)", "404 - Not Found");
-            template = template.Replace("$(header_text)", "Error 404");
-            template = template.Replace("$(content)", "The requested document was not found");
+            if(content == null)
+                content = new HttpPageContent(HttpSettings.PrivateHtml + "/template.html");
         }
 
         public async override Task<HttpResponse> OnGet(HttpContext context)
         {
-            await Task.Delay(1);
+            bool result = await content.LoadAsync();
+
+            if(result)
+            {
+                template = content.Content;
+                template = template.Replace("$(title)", "404 - Not Found");
+                template = template.Replace("$(header_text)", "Error 404");
+                template = template.Replace("$(content)", "The requested document was not found");
+            }
 
             var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(MediaType.TextHtml), template);
-            response.CacheControl = cacheControl;
+            response.AddHeader("Cache-Control", "max-age=60");
             return response;
         }
     }

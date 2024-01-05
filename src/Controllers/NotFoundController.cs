@@ -26,7 +26,7 @@ namespace Swerva.Controllers
             }
 
             var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(MediaType.TextHtml), template);
-            response.AddHeader("Cache-Control", "max-age=60");
+            response.AddHeader("Cache-Control", "max-age=3600");
             return response;
         }
     }

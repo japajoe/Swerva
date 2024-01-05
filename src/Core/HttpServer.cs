@@ -6,18 +6,20 @@ using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Text;
+using Swerva.Utilities;
 
 namespace Swerva
 {
     public sealed class HttpServer
     {
+        public event AsyncEventHandler<HttpRequestEvent> Request;
+
         private volatile bool run;
         private TcpListener httpListener = null;
         private TcpListener httpsListener = null;
         private X509Certificate certificate = null;
-        private HttpRouteMapper routeMapper = null;
 
-        public HttpServer(HttpConfig config, HttpRouteMapper routeMapper)
+        public HttpServer(HttpConfig config)
         {
             HttpSettings.LoadFromConfig(config);
 
@@ -27,7 +29,6 @@ namespace Swerva
                 this.httpsListener = new TcpListener(IPAddress.Any, HttpSettings.SslPort);
             
             this.certificate = new X509Certificate2(HttpSettings.CertificatePath, HttpSettings.CertificatePassword);
-            this.routeMapper = routeMapper;
         }
 
         public async Task Run()
@@ -97,8 +98,7 @@ namespace Swerva
             {
                 using(var stream = client.GetStream())
                 {
-                    byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
-                    int headerSize = ReadHeader(buffer, stream, out string header);
+                    int headerSize = ReadHeader(stream, out string header);
 
                     if(HttpSettings.UseHttps && HttpSettings.UseHttpsForwarding)
                     {
@@ -112,19 +112,17 @@ namespace Swerva
                             }
                         }
 
-                        string redirectResponse = "HTTP/1.1 301 Moved Permanently\r\n" + 
-                        "Location: " + location + "\r\n" +
-                        "Connection: close\r\n" + "/\r\n\r\n";
-                        var response = Encoding.UTF8.GetBytes(redirectResponse);
-
-                        await stream.WriteAsync(response, 0, response.Length);
+                        HttpResponse response = new HttpResponse(HttpStatusCode.MovedPermanently, new HttpContentType(MediaType.TextPlain));
+                        response.AddHeader("Location", location);
+                        response.AddHeader("Connection", "close");
+                        await response.Send(new HttpContext(stream, null));
                     }
                     else
                     {
                         if(headerSize > 0 && headerSize <= HttpSettings.MaxHeaderSize)
-                            await HandleRequest(header, buffer, stream);
+                            await HandleRequest(header, stream);
                         else
-                            await HandleInvalidRequest(header, buffer, stream);
+                            await HandleInvalidRequest(header, stream);
                     }
                 }
             }
@@ -138,20 +136,20 @@ namespace Swerva
                 {
                     stream.AuthenticateAsServer(certificate, clientCertificateRequired: false, checkCertificateRevocation: true);
 
-                    byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
-
-                    int headerSize = ReadHeader(buffer, stream, out string header);
+                    int headerSize = ReadHeader(stream, out string header);
                     
                     if(headerSize > 0 && headerSize <= HttpSettings.MaxHeaderSize)
-                        await HandleRequest(header, buffer, stream);
+                        await HandleRequest(header, stream);
                     else
-                        await HandleInvalidRequest(header, buffer, stream);
+                        await HandleInvalidRequest(header, stream);
                 }
             }
         }
 
-        private int ReadHeader(byte[] buffer, Stream stream, out string header)
+        private int ReadHeader(Stream stream, out string header)
         {
+            byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
+
             header = string.Empty;
 
             // Read the header byte by byte until you encounter a double CRLF ("\r\n\r\n") indicating the end of the header
@@ -185,49 +183,15 @@ namespace Swerva
             return headerSize;
         }
 
-        private async Task HandleRequest(string request, byte[] buffer, Stream stream)
+        private async Task HandleRequest(string request, Stream stream)
         {
             if(HttpRequest.TryParse(request, out HttpRequest httpRequest))
             {
-                HttpLog.WriteLine(httpRequest.Method + ": " + httpRequest.RawURL);
                 HttpContext context = new HttpContext(stream, httpRequest);
 
-                if(routeMapper.GetRoute(httpRequest.URL, out HttpRoute route, false))
+                if (Request != null)
                 {
-                    await route.ProcessRequest(context, buffer);
-                }
-                else
-                {
-                    string filepath = HttpSettings.PublicHtml + context.Request.URL;
-
-                    //To do: fix the path to prevent looking for files outside of allowed directory
-                    if(System.IO.File.Exists(filepath) && IsPathWithinDirectory(filepath, HttpSettings.PublicHtml))
-                    {
-                        MediaType mediaType = MediaType.ApplicationOctetStream;
-
-                        if(MimeTypeMap.TryGetMimeType(filepath, out string mimeType))
-                        {
-                            mediaType = HttpContentType.GetMediaTypeFromString(mimeType);
-                        }
-
-                        var filestream = new System.IO.FileStream(filepath, FileMode.Open, FileAccess.Read);
-                        var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(mediaType), filestream);
-                        response.AddHeader("Cache-Control", "max-age=3600");
-                        await response.Send(context, buffer);
-                    }
-                    else
-                    {
-                        if(routeMapper.GetRoute("/404", out route, true))
-                        {
-                            await route.ProcessRequest(context, buffer);
-                        }
-                        else
-                        {
-                            var response = new HttpResponse(HttpStatusCode.NotFound, new HttpContentType(MediaType.TextHtml), "The requested document was not found");
-                            response.AddHeader("Cache-Control", "max-age=3600");
-                            await response.Send(context, buffer);
-                        }
-                    }
+                    await Request.InvokeAllAsync(this, new HttpRequestEvent(context));
                 }
             }
             else
@@ -235,22 +199,15 @@ namespace Swerva
                 HttpContext context = new HttpContext(stream, null);
                 var response = new HttpResponse(HttpStatusCode.BadRequest, new HttpContentType(MediaType.TextHtml), "Bad request");
                 response.AddHeader("Cache-Control", "max-age=3600");
-                await response.Send(context, buffer);
+                await response.Send(context);
             }
         }
 
-        private async Task HandleInvalidRequest(string request, byte[] buffer, Stream stream)
+        private async Task HandleInvalidRequest(string request, Stream stream)
         {
             HttpContext context = new HttpContext(stream, null);
             var response = new HttpResponse(HttpStatusCode.RequestHeaderFieldsTooLarge, new HttpContentType(MediaType.TextHtml), "The request header is too large");
-            await response.Send(context, buffer);
-        }
-
-        private bool IsPathWithinDirectory(string path, string directory)
-        {
-            string fullPath = Path.GetFullPath(path);
-            string fullDirectoryPath = Path.GetFullPath(directory);
-            return fullPath.StartsWith(fullDirectoryPath, StringComparison.OrdinalIgnoreCase);
+            await response.Send(context);
         }
     }
 }

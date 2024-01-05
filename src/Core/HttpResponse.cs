@@ -74,8 +74,10 @@ namespace Swerva
             Headers[key] = value;
         }
 
-        public async Task Send(HttpContext context, byte[] buffer)
+        public async Task Send(HttpContext context)
         {
+            byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
+            
             try
             {
                 string header = GetHeader();

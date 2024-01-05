@@ -6,7 +6,7 @@ namespace Swerva
 {
     class Program
     {
-        static HttpServer server;
+        static HttpApplication application;
         static HttpRouteMapper routeMapper;
 
         static async Task Main(string[] args)
@@ -19,15 +19,14 @@ namespace Swerva
             routeMapper.Add<IndexController>("/");
             routeMapper.Add<IndexController>("/index");
             routeMapper.Add<IndexController>("/home");
-            routeMapper.Add<NotFoundController>("/404", true);
 
-            server = new HttpServer(config, routeMapper);
-            await server.Run();
+            application = new HttpApplication(config, routeMapper);
+            await application.Run();
         }
 
         private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            server?.Stop();
+            application?.Stop();
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Swerva
         public HttpContentType ContentType { get; set; }
         public ulong ContentLength { get; private set; }
         public Dictionary<string,string> KeyValuePairs { get; set; }
-        public Dictionary<string,string> Cookies { get; set; }
+        public Dictionary<string,string> Cookies { get; set; }        
 
         private static Dictionary<string, HttpRequestMethod> requestMethodTable = new Dictionary<string, HttpRequestMethod>();
 

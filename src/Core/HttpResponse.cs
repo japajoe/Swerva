@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Buffers;
 
 namespace Swerva
 {
@@ -13,12 +14,24 @@ namespace Swerva
         public Stream Content { get; private set; }
         public Dictionary<string, string> Headers { get; set; }
 
+        public HttpResponse(HttpStatusCode statusCode)
+        {
+            this.StatusCode = statusCode;
+            this.ContentType = new HttpContentType(MediaType.TextPlain);
+            this.Content = null;
+            this.Headers = new Dictionary<string, string>();
+
+            AddDefaultHeaders();
+        }
+
         public HttpResponse(HttpStatusCode statusCode, HttpContentType contentType)
         {
             this.StatusCode = statusCode;
             this.ContentType = contentType;
             this.Content = null;
             this.Headers = new Dictionary<string, string>();
+
+            AddDefaultHeaders();
         }
 
         public HttpResponse(HttpStatusCode statusCode, HttpContentType contentType, Stream content)
@@ -27,6 +40,8 @@ namespace Swerva
             this.ContentType = contentType;
             this.Content = content;
             this.Headers = new Dictionary<string, string>();
+
+            AddDefaultHeaders();
         }
 
         public HttpResponse(HttpStatusCode statusCode, HttpContentType contentType, string content)
@@ -39,14 +54,20 @@ namespace Swerva
             writer.Write(content);
             writer.Flush();
             this.Content.Position = 0;
+
+            AddDefaultHeaders();
+        }
+
+        private void AddDefaultHeaders()
+        {
+            AddHeader("Date", System.DateTime.UtcNow.ToString());
+            AddHeader("Server", HttpSettings.Name);            
         }
 
         private string GetHeader()
         {
             HttpResponseBuilder builder = new HttpResponseBuilder();
             builder.Start(StatusCode);
-            builder.AddHeader("Date", System.DateTime.UtcNow.ToString());
-            builder.AddHeader("Server", HttpSettings.Name);
 
             if(Headers != null)
             {
@@ -76,7 +97,7 @@ namespace Swerva
 
         public async Task Send(HttpContext context)
         {
-            byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(HttpSettings.BufferSize);
             
             try
             {
@@ -117,6 +138,7 @@ namespace Swerva
             finally
             {
                 Content?.Dispose();
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
     }

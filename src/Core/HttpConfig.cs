@@ -16,6 +16,7 @@ namespace Swerva
         public bool UseHttps { get; set; }
         public bool UseHttpsForwarding { get; set; }
         public int MaxHeaderSize { get; set; }
+        public int BufferSize { get; set; }
 
         public static HttpConfig LoadFromFile(string filepath)
         {
@@ -58,6 +59,7 @@ namespace Swerva
             this.UseHttps = obj.UseHttps;
             this.UseHttpsForwarding = obj.UseHttpsForwarding;
             this.MaxHeaderSize = obj.MaxHeaderSize;
+            this.BufferSize = obj.BufferSize;
         }
 
         public string Serialize()

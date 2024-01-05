@@ -2,12 +2,12 @@ using System.Threading.Tasks;
 
 namespace Swerva.Controllers
 {
-    public sealed class IndexController : HttpControllerBase
+    public sealed class ContactController : HttpControllerBase
     {
         private static HttpPageContent content;
         private string template;
 
-        public IndexController()
+        public ContactController()
         {
             if(content == null)
                 content = new HttpPageContent(HttpSettings.PrivateHtml + "/template.html");
@@ -20,10 +20,10 @@ namespace Swerva.Controllers
             if(result)
             {
                 template = content.Content;
-                template = template.Replace("$(title)", "Home - Swerva Web");
-                template = template.Replace("$(header_text)", "Home");
+                template = template.Replace("$(title)", "Contact - Swerva Web");
+                template = template.Replace("$(header_text)", "Contact");
                 template = template.Replace("$(head)", "");
-                template = template.Replace("$(content)", "<p>Welcome to the home page</p>");
+                template = template.Replace("$(content)", "<p>Contact me on <a href=\"https://github.com/japajoe\" target=\"blank\">GitHub</a></p>");
             }
 
             var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(MediaType.TextHtml), template);

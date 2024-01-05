@@ -120,9 +120,9 @@ namespace Swerva
                     else
                     {
                         if(headerSize > 0 && headerSize <= HttpSettings.MaxHeaderSize)
-                            await HandleRequest(header, stream);
+                            await HandleRequest(client, header, stream);
                         else
-                            await HandleInvalidRequest(header, stream);
+                            await HandleInvalidRequest(client, header, stream);
                     }
                 }
             }
@@ -139,17 +139,15 @@ namespace Swerva
                     int headerSize = ReadHeader(stream, out string header);
                     
                     if(headerSize > 0 && headerSize <= HttpSettings.MaxHeaderSize)
-                        await HandleRequest(header, stream);
+                        await HandleRequest(client, header, stream);
                     else
-                        await HandleInvalidRequest(header, stream);
+                        await HandleInvalidRequest(client, header, stream);
                 }
             }
         }
 
         private int ReadHeader(Stream stream, out string header)
         {
-            byte[] buffer = new byte[HttpSettings.MaxHeaderSize];
-
             header = string.Empty;
 
             // Read the header byte by byte until you encounter a double CRLF ("\r\n\r\n") indicating the end of the header
@@ -183,11 +181,12 @@ namespace Swerva
             return headerSize;
         }
 
-        private async Task HandleRequest(string request, Stream stream)
+        private async Task HandleRequest(TcpClient client, string request, Stream stream)
         {
             if(HttpRequest.TryParse(request, out HttpRequest httpRequest))
             {
-                HttpContext context = new HttpContext(stream, httpRequest);
+                var userHostAddress = GetUserHostAddress(client);
+                HttpContext context = new HttpContext(stream, httpRequest, userHostAddress);               
 
                 if (Request != null)
                 {
@@ -203,11 +202,17 @@ namespace Swerva
             }
         }
 
-        private async Task HandleInvalidRequest(string request, Stream stream)
+        private async Task HandleInvalidRequest(TcpClient client, string request, Stream stream)
         {
             HttpContext context = new HttpContext(stream, null);
             var response = new HttpResponse(HttpStatusCode.RequestHeaderFieldsTooLarge, new HttpContentType(MediaType.TextHtml), "The request header is too large");
             await response.Send(context);
+        }
+
+        private IPEndPoint GetUserHostAddress(TcpClient client)
+        {
+            IPEndPoint remoteIpEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+            return remoteIpEndPoint;
         }
     }
 }

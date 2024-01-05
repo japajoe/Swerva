@@ -12,6 +12,7 @@ namespace Swerva
         public static bool UseHttps { get; private set; }
         public static bool UseHttpsForwarding { get; private set; }
         public static int MaxHeaderSize { get; private set; }
+        public static int BufferSize { get; private set; }
 
         public static void LoadFromConfig(HttpConfig config)
         {
@@ -25,6 +26,7 @@ namespace Swerva
             UseHttps = config.UseHttps;
             UseHttpsForwarding = config.UseHttpsForwarding;
             MaxHeaderSize = config.MaxHeaderSize;
+            BufferSize = config.BufferSize;
         }
     }
 }

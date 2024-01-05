@@ -8,5 +8,6 @@
     "SslPort":8081,
     "UseHttps":true,
     "UseHttpsForwarding":true,    
-    "MaxHeaderSize":8192
+    "MaxHeaderSize":8192,
+    "BufferSize":4096
 }

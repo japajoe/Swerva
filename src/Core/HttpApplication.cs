@@ -14,7 +14,7 @@ namespace Swerva
         {
             this.routeMapper = routeMapper;
             this.routeMapper.Add<NotFoundController>("/404", true);
-            
+
             server = new HttpServer(config);
 
             server.Request += async (sender, e) =>
@@ -68,7 +68,7 @@ namespace Swerva
                     }
                     else
                     {
-                        var response = new HttpResponse(HttpStatusCode.NotFound, new HttpContentType(MediaType.TextHtml), "The requested document was not found");
+                        var response = new HttpResponse(HttpStatusCode.NotFound, new HttpContentType(MediaType.TextHtml));
                         response.AddHeader("Cache-Control", "max-age=3600");
                         await response.Send(context);
                     }

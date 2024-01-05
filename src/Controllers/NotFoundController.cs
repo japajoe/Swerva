@@ -20,9 +20,10 @@ namespace Swerva.Controllers
             if(result)
             {
                 template = content.Content;
-                template = template.Replace("$(title)", "404 - Not Found");
+                template = template.Replace("$(title)", "Not Found - Swerva Web");
                 template = template.Replace("$(header_text)", "Error 404");
-                template = template.Replace("$(content)", "The requested document was not found");
+                template = template.Replace("$(head)", "");
+                template = template.Replace("$(content)", "<p>The requested document was not found</p>");
             }
 
             var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(MediaType.TextHtml), template);

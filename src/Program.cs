@@ -19,6 +19,9 @@ namespace Swerva
             routeMapper.Add<IndexController>("/");
             routeMapper.Add<IndexController>("/index");
             routeMapper.Add<IndexController>("/home");
+            routeMapper.Add<ExampleController>("/example");
+            routeMapper.Add<ContactController>("/contact");
+            routeMapper.Add<APIController>("/api/v1");
 
             application = new HttpApplication(config, routeMapper);
             await application.Run();

@@ -6,55 +6,55 @@ namespace Swerva
     {
         public async virtual Task<HttpResponse> OnConnect(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnDelete(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnGet(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.NotFound, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnHead(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnOptions(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnPatch(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnPost(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnPut(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 
         public async virtual Task<HttpResponse> OnTrace(HttpContext context)
         {
-            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed, new HttpContentType(MediaType.TextHtml));
+            var task = () => new HttpResponse(HttpStatusCode.MethodNotAllowed);
             return await Task.Run(task);
         }
 

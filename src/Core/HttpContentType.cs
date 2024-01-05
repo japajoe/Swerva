@@ -24,6 +24,23 @@ namespace Swerva
             }
         }
 
+        public static HttpContentType GetContentTypeFromFileExtension(string filepath)
+        {
+            return new HttpContentType(GetMediaTypeFromFileExtension(filepath));
+        }
+
+        public static MediaType GetMediaTypeFromFileExtension(string filepath)
+        {
+            MediaType mediaType = MediaType.ApplicationOctetStream;
+            
+            if(MimeTypeMap.TryGetMimeType(filepath, out string mimeType))
+            {
+                mediaType = HttpContentType.GetMediaTypeFromString(mimeType);
+            }
+
+            return mediaType;
+        }
+
         public static MediaType GetMediaTypeFromString(string contentType)
         {
             if(mediaTypeToStringTable.Count == 0)

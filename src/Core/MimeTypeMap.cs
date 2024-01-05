@@ -757,37 +757,37 @@ namespace Swerva
         /// <summary>
         /// Tries to get the type of the MIME from the provided string.
         /// </summary>
-        /// <param name="str">The filename or extension.</param>
+        /// <param name="fileNameOrExtension">The filename or extension.</param>
         /// <param name="mimeType">The variable to store the MIME type.</param>
         /// <returns>The MIME type.</returns>
         /// <exception cref="ArgumentNullException" />
-        public static bool TryGetMimeType(string str, out string mimeType) 
+        public static bool TryGetMimeType(string fileNameOrExtension, out string mimeType) 
         {
-            if (str == null) 
+            if (fileNameOrExtension == null) 
             {
                 mimeType = string.Empty;
                 return false;
             }
 
-            var indexQuestionMark = str.IndexOf(QuestionMark, StringComparison.Ordinal);
+            var indexQuestionMark = fileNameOrExtension.IndexOf(QuestionMark, StringComparison.Ordinal);
             if (indexQuestionMark != -1)
             {
-                str = str.Remove(indexQuestionMark);
+                fileNameOrExtension = fileNameOrExtension.Remove(indexQuestionMark);
             }
 
 
-            if (!str.StartsWith(Dot))
+            if (!fileNameOrExtension.StartsWith(Dot))
             {
-                var index = str.LastIndexOf(Dot);
-                if (index != -1 && str.Length > index + 1)
+                var index = fileNameOrExtension.LastIndexOf(Dot);
+                if (index != -1 && fileNameOrExtension.Length > index + 1)
                 {
-                    str = str.Substring(index + 1);
+                    fileNameOrExtension = fileNameOrExtension.Substring(index + 1);
                 }
 
-                str = Dot + str;
+                fileNameOrExtension = Dot + fileNameOrExtension;
             }
 
-            return _mappings.Value.TryGetValue(str, out mimeType);
+            return _mappings.Value.TryGetValue(fileNameOrExtension, out mimeType);
         }
 
         /// <summary>

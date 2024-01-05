@@ -48,15 +48,9 @@ namespace Swerva
                 //To do: fix the path to prevent looking for files outside of allowed directory
                 if(System.IO.File.Exists(filepath) && IsPathWithinDirectory(filepath, HttpSettings.PublicHtml))
                 {
-                    MediaType mediaType = MediaType.ApplicationOctetStream;
-
-                    if(MimeTypeMap.TryGetMimeType(filepath, out string mimeType))
-                    {
-                        mediaType = HttpContentType.GetMediaTypeFromString(mimeType);
-                    }
-
+                    HttpContentType contentType = HttpContentType.GetContentTypeFromFileExtension(filepath);
                     var filestream = new System.IO.FileStream(filepath, FileMode.Open, FileAccess.Read);
-                    var response = new HttpResponse(HttpStatusCode.OK, new HttpContentType(mediaType), filestream);
+                    var response = new HttpResponse(HttpStatusCode.OK, contentType, filestream);
                     response.AddHeader("Cache-Control", "max-age=3600");
                     await response.Send(context);
                 }

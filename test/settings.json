@@ -1,0 +1,13 @@
+{
+    "Name":"Swerva 1.0.0",
+    "PublicHtml":"www/public_html",
+    "PrivateHtml":"www/private_html",
+    "CertificatePath":"cert.pfx",
+    "CertificatePassword":"crypticpassword",
+    "Port":8080,
+    "SslPort":8081,
+    "UseHttps":true,
+    "UseHttpsForwarding":true,    
+    "MaxHeaderSize":8192,
+    "BufferSize":4096
+}

@@ -64,7 +64,7 @@ namespace Swerva
             return await Task.Run(task);
         }
 
-        protected async Task<string> ReadContentAsString(HttpContext context)
+        protected async Task<string> ReadContentAsStringAsync(HttpContext context)
         {
             byte[] buffer = new byte[1024];
 
@@ -76,6 +76,29 @@ namespace Swerva
                 while(bytesRead < context.Request.ContentLength)
                 {
                     int numBytes = await context.Stream.ReadAsync(buffer, 0, buffer.Length);
+                    if(numBytes > 0)
+                        payload += System.Text.Encoding.UTF8.GetString(buffer, 0, numBytes);
+                    bytesRead += (ulong)numBytes;
+                }
+
+                return payload;
+            }
+
+            return string.Empty;
+        }
+
+        protected string ReadContentAsString(HttpContext context)
+        {
+            byte[] buffer = new byte[1024];
+
+            if(context.Request.ContentLength > 0)
+            {
+                ulong bytesRead = 0;
+                string payload = string.Empty;
+                
+                while(bytesRead < context.Request.ContentLength)
+                {
+                    int numBytes = context.Stream.Read(buffer, 0, buffer.Length);
                     if(numBytes > 0)
                         payload += System.Text.Encoding.UTF8.GetString(buffer, 0, numBytes);
                     bytesRead += (ulong)numBytes;

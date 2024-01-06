@@ -5,9 +5,9 @@ namespace Swerva
 {
     public sealed class HttpRoute
     {
-        public string URL { get; set; }
-        public Type ControllerType { get; set; }
-        public bool IsInternal { get; set; }
+        public string URL { get; private set; }
+        public Type ControllerType { get; private set; }
+        public bool IsInternal { get; private set; }
 
         public HttpRoute(string url, Type controllerType, bool isInternal)
         {

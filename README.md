@@ -1,5 +1,5 @@
 # Swerva
-An HTTP web server implementation with support for HTTPS.
+An HTTP and HTTPS web server implementation in C#
 
 # Disclaimer
 I am not an authority in the field of web servers. This project is just for fun and educational purposes, so use at your own discretion.
